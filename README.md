@@ -10,5 +10,5 @@ git clone git@github.com:rodgergit/dotfiles.git
 If there are permission issues.
 
 ```sh
-chmod +x create_zshrc_symlink.sh
+chmod +x install.sh
 ```
