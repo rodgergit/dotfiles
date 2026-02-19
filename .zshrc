@@ -38,3 +38,11 @@ prompt pure
 # Alias
 
 alias art="php artisan"
+alias cc="claude"
+
+# Added by Windsurf
+export PATH="/Users/rodgerchen/.codeium/windsurf/bin:$PATH"
+
+
+export PHP_HOME=/opt/homebrew
+export XDEBUG_MODE=coverage
