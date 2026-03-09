@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Define the path to your dotfiles repo and the target location
-DOTFILES_DIR="/Users/rodgerchen/Developer/dotfiles"
+# Define the path to your dotfiles repo (where this script lives) and the target location
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="$HOME/.zshrc"
 
 # Source file in the dotfiles repo
