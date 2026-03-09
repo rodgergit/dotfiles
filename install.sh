@@ -1,21 +1,78 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Define the path to your dotfiles repo (where this script lives) and the target location
+# --- Config (single source of truth) ---
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="$HOME/.zshrc"
 
-# Source file in the dotfiles repo
-SOURCE="$DOTFILES_DIR/.zshrc"
+# Dotfiles to symlink: "repo_file" or "repo_file:target_path"
+DOTFILES=(
+  .zshrc
+)
 
-# Check if the target already exists and remove it if it's a symlink
-if [ -L "$TARGET" ]; then
-  echo "Removing existing symlink at $TARGET"
-  unlink "$TARGET"
-elif [ -e "$TARGET" ]; then
-  echo "Warning: $TARGET already exists but is not a symlink. Skipping..."
-  exit 1
-fi
+# Homebrew packages used by the dotfiles
+HOMEBREW_PACKAGES=(
+  zsh-syntax-highlighting
+  zsh-autosuggestions
+  fzf
+  pure
+)
 
-# Create the symlink
-ln -s "$SOURCE" "$TARGET"
-echo "Symlink created: $TARGET -> $SOURCE"
+# --- Helpers ---
+link_dotfile() {
+  local src="$DOTFILES_DIR/$1"
+  local dest="${2:-$HOME/$1}"
+
+  if [[ ! -e "$src" ]]; then
+    echo "Warning: $src not found, skipping"
+    return
+  fi
+
+  if [[ -L "$dest" ]]; then
+    echo "Removing existing symlink: $dest"
+    unlink "$dest"
+  elif [[ -e "$dest" ]]; then
+    echo "Error: $dest exists and is not a symlink. Move it and run again."
+    exit 1
+  fi
+
+  ln -s "$src" "$dest"
+  echo "Linked: $dest -> $src"
+}
+
+ensure_brew() {
+  if command -v brew &>/dev/null; then
+    return
+  fi
+  echo "Installing Homebrew..."
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+}
+
+# --- Symlink dotfiles ---
+echo "==> Linking dotfiles"
+for entry in "${DOTFILES[@]}"; do
+  if [[ "$entry" == *:* ]]; then
+    link_dotfile "${entry%%:*}" "${entry#*:}"
+  else
+    link_dotfile "$entry"
+  fi
+done
+
+# --- Homebrew and packages ---
+echo "==> Homebrew and packages"
+ensure_brew
+for pkg in "${HOMEBREW_PACKAGES[@]}"; do
+  if brew list "$pkg" &>/dev/null; then
+    echo "  $pkg (already installed)"
+  else
+    echo "  Installing $pkg..."
+    brew install "$pkg"
+  fi
+done
+
+echo ""
+echo "Done. Run 'source ~/.zshrc' or open a new terminal."
